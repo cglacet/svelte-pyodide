@@ -18,9 +18,10 @@ var onmessage = async(event) => {
     }
     try {
         const results = await self.pyodide.runPythonAsync(python);
-        self.postMessage({
-            results: results
-        });
+        self.pyodide.repr = self.pyodide.pyimport('repr');
+        const str = self.pyodide.repr(results);
+        self.postMessage({results: str});
+        // self.postMessage({results});
     }
     catch (error){
         setTimeout(() => { throw error; });

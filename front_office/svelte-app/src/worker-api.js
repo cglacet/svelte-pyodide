@@ -1,7 +1,6 @@
 let pyodideWorker = new Worker('./build/python-worker.js');
 
 export function run(script, inputs, onSuccess, onError){ 
-    window.console.log("Run");
     start();
     pyodideWorker.onerror = onError;
     pyodideWorker.onmessage = (e) => onSuccess(e.data.results);
@@ -27,8 +26,6 @@ export function start(){
 }
 
 export function terminate(){
-    window.console.log("Stop");
     pyodideWorker.terminate();
     pyodideWorker = null;
-    window.console.log("Stoped");
 }

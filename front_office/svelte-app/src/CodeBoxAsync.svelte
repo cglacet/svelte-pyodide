@@ -27,9 +27,10 @@
         '.'.join(str(x) for x in sys.version_info[0:2])
     `;
     
-    const exampleScript = `
-        pd.read_csv_url('')
-    `;
+    const exampleScript = "" +
+        "import numpy as np\n\n" + 
+        "df = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=['a', 'b', 'c'])\n" +
+        "df";
     
     let pythonVersion;
     let loading = false;
@@ -98,6 +99,10 @@
     async function runEditor(){
         console.log("Running = ", running);
         run(editor.getValue());
+    }
+
+    function setEditorExample(){
+        editor.setValue(exampleScript);
     }
 
     async function stopEditor(){
@@ -198,5 +203,6 @@
                 </div>
             </Window>
         </div>
+        <Fab on:click={setEditorExample} color="primary"><Icon class="material-icons">library_add</Icon></Fab>
     {/if} 
 </div>

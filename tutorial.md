@@ -1,8 +1,11 @@
 # Tutorial 
 
-## Prepare your working directory 
 
-### Installs
+## Back 
+
+### Initialize your working directory 
+
+#### Installs
 
 ```bash
 ❯ pyenv install 3.9.0a5
@@ -13,7 +16,7 @@
 ❯ poetry add -D black mypy pylint
 ```
 
-### Git 
+#### Git 
 
 I used to search for different `.gitignore` 
 (usually for [macOS][.gitignore macos] and [python][.gitignore python]) 
@@ -105,54 +108,6 @@ If this is working you are ready to run the server:
 {"item_id":12,"q":"foo"}
 ```
 
-## Code
-
-### Front
-
-We will test [svelte][svelte] using this [degit][svelte degit] [template][svelte degit template]:
-
-```bash
-❯ mkdir front_office
-❯ cd front_office
-❯ npm install -g degit
-/usr/local/bin/degit -> /usr/local/lib/node_modules/degit/bin.js
-+ degit@2.8.0
-added 1 package from 1 contributor in 1.245s
-❯ npx degit sveltejs/template svelte-app
-> cloned sveltejs/template#master to svelte-app
-❯ cd svelte-app
-❯ npm install
-❯ npm i @sveltejs/svelte-repl
-```
-
-I had to modify the default port to make this work:
-
-```diff
-{
-  "scripts": {
-    "build": "rollup -c",
-+   "dev": "PORT=8081 rollup -c -w",
-    "start": "sirv public"
-  },
-}
-```
-
-Let's try it:
-
-```bash
-❯ npm run dev
-❯ open http://localhost:8081
-```
-
-And now add the python interpreter: 
-
-```
-```
-
-[svelte]: https://svelte.dev/
-[svelte degit]: https://svelte.dev/blog/the-easiest-way-to-get-started#2_Use_degit
-[svelte degit template]: https://github.com/sveltejs/template
-
 ### Serving static files and templating 
 
 ```bash
@@ -185,6 +140,7 @@ Item ID:
 {{ id }}
 ```
 
+We can test that templating works:
 
 ```bash
 ❯ curl -sL http://127.0.0.1:8000/items/12\?q\=foo
@@ -192,16 +148,57 @@ Item ID:
 12
 ```
 
-You should see:
-
-
 
 [jinja2 templates]: https://fastapi.tiangolo.com/advanced/templates
 
 
-## Additional steps 
+## Front
 
-Import ace to include homemade themes:
+### Initialize your working directory 
+
+We will test [svelte][svelte] using this [degit][svelte degit] [template][svelte degit template]:
+
+```bash
+❯ mkdir front_office
+❯ cd front_office
+❯ npm install -g degit
+/usr/local/bin/degit -> /usr/local/lib/node_modules/degit/bin.js
++ degit@2.8.0
+added 1 package from 1 contributor in 1.245s
+❯ npx degit sveltejs/template svelte-app
+> cloned sveltejs/template#master to svelte-app
+❯ cd svelte-app
+❯ npm install
+```
+
+I had to modify the default port to make this work:
+
+```diff
+{
+  "scripts": {
+    "build": "rollup -c",
++   "dev": "PORT=8081 rollup -c -w",
+    "start": "sirv public"
+  },
+}
+```
+
+Let's try it:
+
+```bash
+❯ npm run dev
+❯ open http://localhost:8081
+```
+
+
+[svelte]: https://svelte.dev/
+[svelte degit]: https://svelte.dev/blog/the-easiest-way-to-get-started#2_Use_degit
+[svelte degit template]: https://github.com/sveltejs/template
+
+### ACE text editor 
+
+We could use ACE builds directly, but if we want to add custom theme its simpler 
+to install build it ourselves:
 
 ```bash 
 ❯ git submodule add git@github.com:ajaxorg/ace.git
@@ -209,7 +206,9 @@ Import ace to include homemade themes:
 ❯ npm install
 ```
 
-Then, copy tmThemes files in `ace/tool/tmthemes/`, 
+#### Adding themes before building 
+
+Copy **tmThemes** files in `ace/tool/tmthemes/`, 
 edit `ace/tool/tmtheme.js` to add your theme:
 
 ```diff
@@ -221,64 +220,146 @@ var themes = {
 }
 ```
 
-
-
-build Ace: 
-
+#### Build Ace
 
 ```bash
 ❯ npm install 
 ❯ node Makefile.dryice.js full --target ../public/ace-builds
 ```
 
+#### Include the build in svelte 
 
-## Material svelte 
+In the component where you want to import the ACE text editor:
 
-```bash
-❯ npm install -D svelte-material-ui 
-❯ npm install -D @material/linear-progress @material/theme @material/typography @material/elevation
-❯ npm install -D rollup-plugin-postcss svelte-preprocess node-sass 
+```svelte
+<svelte:head>
+    <script src="/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8" on:load={loadEditor}></script>
+</svelte:head>
+
+<script>
+    let editor;
+    function loadEditor(){
+        editor = ace.edit("editor", {
+            printMargin: false,
+            cursorStyle: 'wide',
+        });
+        editor.session.setMode("ace/mode/python");
+        editor.setTheme('ace/theme/Material-Theme');
+        // editor.session.on('change', editorChange);
+        editor.commands.addCommand({
+            name: "Save",
+            bindKey: { win: "Ctrl-S", mac: "Command-S" },
+            exec: saveEditor(),
+        });
+        editor.commands.addCommand({
+            name: "Execute",
+            bindKey: { win: "Ctrl-Return", mac: "Command-Return" },
+            exec: runEditor,
+        });
+    }
+</script>
+
+<pre id="editor" class="ace_editor"></pre>
 ```
 
-Rollup :
-```diff
-plugins: [
-		svelte({
-			// enable run-time checks when not in production
-			dev: !production,
-			// we'll extract any component CSS out into
-			// a separate file - better for performance
-			css: css => {
-				css.write('bundle.css');
-			},
-+			emitCss: true,
-			preprocess: autoPreprocess(),
-		}),
+The `loadEditor` callbacks is very important, its required to setup the ACE editor on the html component only 
+after the script as been successfully loaded.
 
-		css({ output: "public/build/vendor.css" }),
 
-+		postcss({
-+           extract: true,
-+           minimize: true,
-+           use: [
-+               ['sass', {
-+               includePaths: [
-+                   './src/theme',
-+                   './node_modules'
-+               ]
-+               }]
-+           ]
-+    }),
+###  Python interpreter
+
+We will use the [pyodide][pyodide] as an interpreter:
+
+> Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, > along with the Python 
+> scientific stack including NumPy, Pandas,Matplotlib, parts of SciPy, and NetworkX. 
+> The [`packages` directory][pyodide packages]
+> lists over 35 packages which are currently available.
+>
+> Pyodide provides transparent conversion of objects between Javascript and Python. 
+> When used inside a browser, Python has full access to the Web APIs.
+
+In other words we can execute python code in the in a web browser and also
+exchange objects between python and javascript.
+
+#### Main thread execution & web workers
+
+There are two way of executing code using pyodide: 
+
+* Directly in the main thread, by simply using the provided [functions][pyodide API].
+* [Using a web worker][pyodide web worker] to execute the interpreter outside the main thread.
+
+We will most likely use the two ways. The first being way more practical (python and 
+javascript both running in the same thread, this facilitates object exchanges). The 
+second is very convinrent when running heavier computations because the main thread,
+which the browser uses, will not be blocked because of the python interpreter consuming
+computation ressources. 
+
+Notice that pyodide provides a method named [`pyodide.runPythonAsync`][pyodide async run]
+which allows to run `async` python code and return a javascript [Promise][js promise].
+At first it may sound like this function will run the python script in some sort of
+event loop (separate thread), like it does in python, but that's not the case. 
+This method will block the main JS thread even if it executes asynchronous IO.
+
+> ## Caveats
+>
+> Using a web worker is advantageous because the python code is run in a separate thread 
+> from your main UI, and hence does not impact your application’s responsiveness. There 
+> are some limitations, however. At present, Pyodide does not support sharing the Python 
+> interpreter and packages between multiple web workers or with your main thread. Since 
+> web workers are each in their own virtual machine, you also cannot share globals between 
+> a web worker and your main thread. Finally, although the web worker is separate from your 
+> main thread, the web worker is itself single threaded, so only one python script will 
+> execute at a time.
+
+#### Using the main thread
+
+Let's first start with the easy part and import the library to make sure everything works:
+
+```svelte
+<svelte:head>
+    <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js" on:load={pythonLoaded}></script>
+</svelte:head>
+
+<script>
+    import { fade } from 'svelte/transition';
+    
+    const pythonScript = `
+        import sys
+        '.'.join(str(x) for x in sys.version_info[0:2])
+    `;
+    
+    let pythonVersion;
+	async function pythonLoaded(){
+        await languagePluginLoader;
+        pythonVersion = await pyodide.runPythonAsync(pythonScript);
+    }
+</script>
+
+<p in:fade>Loading python interpreter</p>
+{#if pythonVersion}
+    <p in:fade>Python {pythonVersion}</p>
+{/if}
 ```
 
+If this works properly, after loading the page in your browser you should see 
+*"Python 3.7"* (or another version if you have a more recent version of pyodide) 
+appear right under *"Loading python interpreter"*. It will only take a few 
+seconds to load pyodide.
 
-## Async worker 
 
+[pyodide]: https://github.com/iodide-project/pyodide
+[pyodide packages]: https://github.com/iodide-project/pyodide/tree/master/packages
+[pyodide API]: https://pyodide.readthedocs.io/en/latest/api_reference.html
+[pyodide web worker]: https://pyodide.readthedocs.io/en/latest/using_pyodide_from_webworker.html
+[pyodide async run]: https://pyodide.readthedocs.io/en/latest/js-api/pyodide_runPythonAsync.html#js-api-pyodide-runpythonasync
+[js promise]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 
-A main, that look like:
+#### Using a web worker 
 
+We first need to create a web worker that will execute python scripts 
+using pyodideA main, that look like:
 
-```html
+```svelte
 <script>
 	import Test from './Test.svelte';
 	export let title;
@@ -303,7 +384,7 @@ In this process we have three parties:
 
 A `Test.svelte` component that looks like: 
 
-```html
+```svelte
 <script>
 import { asyncRun } from './py-worker';
 
@@ -426,3 +507,47 @@ pyodide.js:104 Loading numpy from https://pyodide-cdn2.iodide.io/v0.15.0/full/nu
 pyodide.js:206 Loaded pytz, numpy
 Test.svelte:17 pyodideWorker return results:  2.0634114147853952
 ```
+
+
+### Adding some style 
+
+#### Material svelte 
+
+```bash
+❯ npm install -D svelte-material-ui 
+❯ npm install -D @material/linear-progress @material/theme @material/typography @material/elevation
+❯ npm install -D rollup-plugin-postcss svelte-preprocess node-sass 
+```
+
+Rollup :
+
+```diff
+plugins: [
+		svelte({
+			// enable run-time checks when not in production
+			dev: !production,
+			// we'll extract any component CSS out into
+			// a separate file - better for performance
+			css: css => {
+				css.write('bundle.css');
+			},
++			emitCss: true,
+			preprocess: autoPreprocess(),
+		}),
+
+		css({ output: "public/build/vendor.css" }),
+
++		postcss({
++           extract: true,
++           minimize: true,
++           use: [
++               ['sass', {
++               includePaths: [
++                   './src/theme',
++                   './node_modules'
++               ]
++               }]
++           ]
++    }),
+```
+
