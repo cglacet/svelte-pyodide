@@ -1,0 +1,6 @@
+[submodule "front_office/svelte-app/ace-builds"]
+	path = front_office/svelte-app/ace-builds
+	url = git@github.com:ajaxorg/ace-builds.git
+[submodule "front_office/svelte-app/ace"]
+	path = front_office/svelte-app/ace
+	url = git@github.com:ajaxorg/ace.git

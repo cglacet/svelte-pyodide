@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script  src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
+    <title>Testing Iodide</title>
+</head>
+
+<body>
+    <h1>Trying out Iodide<sub>α</sub></h1>
+    Python version <span id="py.version"></span>
+</body>
+
+<script lang="javascript">
+    onLoad();
+
+    async function onLoad(){
+        loadPython();
+    }
+
+    async function loadPython(){
+        await languagePluginLoader;
+        const output = pyodide.runPython('import sys\nsys.version');
+        document.getElementById("py.version").innerHTML = output;
+    }
+</script>
+</html>
