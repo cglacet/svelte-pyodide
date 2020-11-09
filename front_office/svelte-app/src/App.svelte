@@ -5,7 +5,6 @@
 </svelte:head>
 
 <script>
-	// import './public/WorkerConsole';
 	import CodeBox from './CodeBoxAsync.svelte';
 	import Test from './Test.svelte';
 	export let title;
